@@ -1,12 +1,13 @@
 """
-S3RAPHIM ADS-B Flight Data Generator
-Interactive version – user chooses how many records to generate.
+S3RAPHIM ADS-B Data Generator
+Creates normal + anomalous flight records and saves them to JSON.
 """
 
 import random
+import json
 from datetime import datetime
 
-def create_realistic_adsb_record():
+def create_normal_record():
     on_ground = random.choice([True, False])
 
     if on_ground:
@@ -28,53 +29,70 @@ def create_realistic_adsb_record():
         "longitude": round(random.uniform(2.5, 14.5), 4),
         "on_ground": on_ground,
         "vertical_rate": vertical_rate,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "anomaly": False
     }
 
-def generate_adsb_data(num_records):
-    print(f"\nGenerating {num_records:,} simulated ADS-B records...")
-    data = [create_realistic_adsb_record() for _ in range(num_records)]
-    print("Generation complete.")
-    return data
+def create_anomalous_record():
+    record = create_normal_record()
+    anomaly_type = random.choice([
+        "impossible_altitude",
+        "impossible_speed",
+        "ground_high_alt",
+        "extreme_vertical",
+        "missing_callsign"
+    ])
+
+    if anomaly_type == "impossible_altitude":
+        record["altitude"] = random.choice([65000, -500, 72000])
+    elif anomaly_type == "impossible_speed":
+        record["velocity"] = random.choice([650, -20, 800])
+    elif anomaly_type == "ground_high_alt":
+        record["on_ground"] = True
+        record["altitude"] = random.randint(5000, 35000)
+    elif anomaly_type == "extreme_vertical":
+        record["vertical_rate"] = random.choice([9000, -9500, 11000])
+    elif anomaly_type == "missing_callsign":
+        record["callsign"] = None
+
+    record["anomaly"] = True
+    return record
+
+def generate_dataset(num_records, anomaly_rate=0.05):
+    data = []
+    anomaly_count = 0
+
+    for _ in range(num_records):
+        if random.random() < anomaly_rate:
+            data.append(create_anomalous_record())
+            anomaly_count += 1
+        else:
+            data.append(create_normal_record())
+
+    return data, anomaly_count
 
 if __name__ == "__main__":
-    print("=" * 50)
-    print("       S3RAPHIM ADS-B DATA GENERATOR")
-    print("=" * 50)
+    print("=" * 55)
+    print("       S3RAPHIM ADS-B GENERATOR (with Anomalies)")
+    print("=" * 55)
 
     while True:
         try:
-            user_input = input("\nHow many ADS-B records do you want to generate? → ")
-            num_records = int(user_input)
-
+            num_records = int(input("\nHow many records do you want to generate? → "))
             if num_records <= 0:
                 print("Please enter a number greater than 0.")
                 continue
-
-            # Warning for large numbers
-            if num_records >= 50000:
-                confirm = input(f"\n⚠️  {num_records:,} is a large number and may use a lot of memory.\nDo you want to continue? (y/n): ").lower()
-                if confirm != "y":
-                    print("Cancelled. Try a smaller number.")
-                    continue
-
             break
-
         except ValueError:
             print("Please enter a valid number.")
 
-    # Generate the data
-    adsb_data = generate_adsb_data(num_records)
+    data, injected = generate_dataset(num_records, anomaly_rate=0.05)
 
-    # Show results
-    print(f"\nTotal records created: {len(adsb_data):,}")
-    print("\n--- Sample Record (first) ---")
-    print(adsb_data[0])
+    filename = "s3raphim_adsb_data.json"
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
 
-    print("\n--- Sample Record (middle) ---")
-    print(adsb_data[len(adsb_data)//2])
-
-    print("\n--- Sample Record (last) ---")
-    print(adsb_data[-1])
-
-    print("\nS3RAPHIM data generation finished successfully.")
+    print(f"\nSuccessfully generated {num_records:,} records.")
+    print(f"Anomalies injected: {injected:,}")
+    print(f"Data saved to → {filename}")
+    print("\nYou can now run the detector.")
