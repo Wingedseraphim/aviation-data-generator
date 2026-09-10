@@ -63,3 +63,13 @@ Each record is a JSON object like:
     "anomaly": false
 }
 ```
+## Thesis bridge
+
+S3RAPHIM can export features compatible with the B.Sc project
+*Machine Learning for Flight Anomaly Detection*
+(University of Benin, 2025).
+
+Run:
+
+```bash
+python s3raphim_to_thesis.py
