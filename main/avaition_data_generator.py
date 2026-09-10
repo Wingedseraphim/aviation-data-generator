@@ -1,6 +1,8 @@
 """
 S3RAPHIM ADS-B Data Generator
 Creates normal + anomalous flight records and saves them to JSON.
+- Saves a timestamped version for history
+- Also saves as s3raphim_adsb_data.json (latest)
 """
 
 import random
@@ -88,11 +90,21 @@ if __name__ == "__main__":
 
     data, injected = generate_dataset(num_records, anomaly_rate=0.05)
 
-    filename = "s3raphim_adsb_data.json"
-    with open(filename, "w") as f:
+    # Create timestamp for unique filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # 1. Save with timestamp (for history / reproducibility)
+    history_filename = f"s3raphim_adsb_{timestamp}.json"
+    with open(history_filename, "w") as f:
+        json.dump(data, f, indent=4)
+
+    # 2. Also save as the latest file (so detector can find it easily)
+    latest_filename = "s3raphim_adsb_data.json"
+    with open(latest_filename, "w") as f:
         json.dump(data, f, indent=4)
 
     print(f"\nSuccessfully generated {num_records:,} records.")
     print(f"Anomalies injected: {injected:,}")
-    print(f"Data saved to → {filename}")
+    print(f"Saved as latest      → {latest_filename}")
+    print(f"Saved with timestamp → {history_filename}")
     print("\nYou can now run the detector.")
