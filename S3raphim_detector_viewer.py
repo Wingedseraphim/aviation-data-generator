@@ -1,9 +1,18 @@
 """
 S3RAPHIM ADS-B Anomaly Detector + Data Viewer
 Version 2.1
+
+Reads whichever dataset was last generated (by either generator) and
+lets you browse records or scan for anomalies.
+
+Run standalone:
+    python s3raphim_detector_viewer.py
 """
 
 import json
+
+DATA_FILE = "s3raphim_adsb_data.json"
+
 
 def is_anomalous(record):
     if record["altitude"] > 60000 or record["altitude"] < -100:
@@ -18,6 +27,7 @@ def is_anomalous(record):
         return True, "Missing callsign"
     return False, None
 
+
 def detect_anomalies(data):
     detected = []
     for i, record in enumerate(data):
@@ -30,12 +40,14 @@ def detect_anomalies(data):
             })
     return detected
 
+
 def display_records(data, start, end):
-    print(f"\nShowing records {start} to {end-1}:")
+    print(f"\nShowing records {start} to {end - 1}:")
     print("-" * 60)
     for i, record in enumerate(data[start:end], start=start):
         print(f"[{i}] {record}")
     print("-" * 60)
+
 
 def viewer_menu(data):
     while True:
@@ -47,7 +59,7 @@ def viewer_menu(data):
         print("3. View first 500 records")
         print("4. View custom range")
         print("5. Run anomaly detection")
-        print("6. Exit")
+        print("6. Back / Exit")
 
         choice = input("\nEnter your choice (1-6): ").strip()
 
@@ -79,24 +91,23 @@ def viewer_menu(data):
             else:
                 print("No anomalies found.")
         elif choice == "6":
-            print("\nExiting viewer.")
+            print("\nReturning...")
             break
         else:
             print("Invalid choice. Please try again.")
+
 
 if __name__ == "__main__":
     print("=" * 55)
     print("     S3RAPHIM ADS-B DETECTOR + VIEWER (v2.1)")
     print("=" * 55)
 
-    filename = "s3raphim_adsb_data.json"
-
     try:
-        with open(filename, "r") as f:
+        with open(DATA_FILE, "r") as f:
             data = json.load(f)
-        print(f"\nLoaded {len(data):,} records from {filename}")
+        print(f"\nLoaded {len(data):,} records from {DATA_FILE}")
     except FileNotFoundError:
-        print(f"\nFile '{filename}' not found. Please run generator.py first.")
-        exit()
+        print(f"\nFile '{DATA_FILE}' not found. Please run a generator first.")
+        raise SystemExit(0)
 
     viewer_menu(data)

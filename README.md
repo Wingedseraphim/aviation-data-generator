@@ -1,76 +1,65 @@
-```markdown
-# Aviation Data Generator
+# S3RAPHIM ADS-B Toolkit
 
-Simulated ADS-B flight data generator built for the **S3RAPHIM** aviation project.
-
-This tool creates realistic aircraft position and flight parameter records that can be used for learning, testing, and developing aviation-related software.
-
-## Features
-
-- Interactive command-line interface
-- Generate any number of simulated ADS-B records
-- Realistic flight parameters:
-  - ICAO24 address
-  - Callsign
-  - Altitude
-  - Velocity
-  - Heading
-  - Latitude & Longitude
-  - Vertical rate
-  - On-ground status
-  - Timestamp
-- Option to save generated data as a JSON file
-- Warning system for large data generation
-
-## How to Run
-
-```bash
-python s3raphim_adsb_generator.py
-```
-
-The program will ask you:
-1. How many records you want to generate
-2. Whether you want to save the data as a JSON file
-
-## Example
-
-```
-=======================================================
-          S3RAPHIM ADS-B DATA GENERATOR
-=======================================================
-
-How many ADS-B records do you want to generate? → 1000
-
-Generating 1,000 simulated ADS-B records...
-Generation complete.
-
-Total records created: 1,000
-
-Do you want to save the data to a JSON file? (y/n): y
-Data successfully saved to → s3raphim_adsb_data.json
-```
+Simulated ADS-B flight data generator + anomaly detector, for learning,
+testing, and anomaly-detection practice. Pure Python standard library —
+**no installs, no dependencies, no API keys.**
 
 ## Requirements
 
-- Python 3.7+
-- No external libraries required (uses only built-in modules)
+- Python 3.8+ (nothing else)
 
-## Project Status
+## Files
 
-Current version supports:
-- Custom number of records
-- JSON export
-- Basic realistic aviation values
+| File | What it does |
+|---|---|
+| `s3raphim_launcher.py` | **Start here.** One menu that ties everything together. |
+| `s3raphim_generator_anomalies.py` | Generates flight records, injecting ~5% intentional anomalies (impossible altitude/speed, contradictory ground state, etc). |
+| `s3raphim_generator_clean.py` | Generates only valid, realistic flight records — no anomalies. |
+| `s3raphim_detector_viewer.py` | Loads the saved dataset, lets you browse records, and scans for anomalies. |
 
-## Future Improvements
+All three scripts read/write the same file, `s3raphim_adsb_data.json`,
+so whichever generator you run last is what the detector inspects.
 
-- Better file naming
-- Data statistics summary
-- Ability to load existing datasets
-- Filtering tools (e.g. high altitude aircraft)
-- More realistic geographic and flight patterns
+## Quick start
 
----
+```bash
+git clone <this-repo-url>
+cd <repo-folder>
+python s3raphim_launcher.py
+```
 
-**Part of the S3RAPHIM Aviation Systems project**
+Then just follow the menu:
+
+1. Generate data with anomalies (or clean data)
+2. View / detect anomalies
+
+That's it — no setup required.
+
+## Running scripts individually
+
+Each script also works standalone if you don't want the menu:
+
+```bash
+python s3raphim_generator_anomalies.py   # or s3raphim_generator_clean.py
+python s3raphim_detector_viewer.py
+```
+
+## Data format
+
+Each record is a JSON object like:
+
+```json
+{
+    "icao24": "8b2a26",
+    "callsign": "AA711",
+    "altitude": 35000,
+    "velocity": 430,
+    "heading": 210,
+    "latitude": 9.0765,
+    "longitude": 7.3986,
+    "on_ground": false,
+    "vertical_rate": 500,
+    "timestamp": "2026-09-10T14:04:55.133043Z",
+    "anomaly": false
+}
 ```

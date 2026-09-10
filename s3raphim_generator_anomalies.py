@@ -1,11 +1,20 @@
 """
-S3RAPHIM ADS-B Data Generator
-Creates normal + anomalous flight records and saves them to JSON.
+S3RAPHIM ADS-B Data Generator (WITH anomalies)
+Creates realistic flight records and injects a small % of anomalies
+(impossible altitude/speed, contradictory ground state, etc).
+
+Run standalone:
+    python s3raphim_generator_anomalies.py
+
+Or import generate_dataset() from another script.
 """
 
 import random
 import json
-from datetime import datetime
+from datetime import datetime, timezone
+
+DATA_FILE = "s3raphim_adsb_data.json"
+
 
 def create_normal_record():
     on_ground = random.choice([True, False])
@@ -29,9 +38,10 @@ def create_normal_record():
         "longitude": round(random.uniform(2.5, 14.5), 4),
         "on_ground": on_ground,
         "vertical_rate": vertical_rate,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "anomaly": False
     }
+
 
 def create_anomalous_record():
     record = create_normal_record()
@@ -58,6 +68,7 @@ def create_anomalous_record():
     record["anomaly"] = True
     return record
 
+
 def generate_dataset(num_records, anomaly_rate=0.05):
     data = []
     anomaly_count = 0
@@ -71,28 +82,30 @@ def generate_dataset(num_records, anomaly_rate=0.05):
 
     return data, anomaly_count
 
-if __name__ == "__main__":
-    print("=" * 55)
-    print("       S3RAPHIM ADS-B GENERATOR (with Anomalies)")
-    print("=" * 55)
 
+def _prompt_for_count():
     while True:
         try:
             num_records = int(input("\nHow many records do you want to generate? → "))
             if num_records <= 0:
                 print("Please enter a number greater than 0.")
                 continue
-            break
+            return num_records
         except ValueError:
             print("Please enter a valid number.")
 
-    anomaly_rate = 0.05  # 5% anomalies
-    data, injected = generate_dataset(num_records, anomaly_rate)
 
-    filename = "s3raphim_adsb_data.json"
-    with open(filename, "w") as f:
+if __name__ == "__main__":
+    print("=" * 55)
+    print("       S3RAPHIM ADS-B GENERATOR (with Anomalies)")
+    print("=" * 55)
+
+    num_records = _prompt_for_count()
+    data, injected = generate_dataset(num_records, anomaly_rate=0.05)
+
+    with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
     print(f"\nSuccessfully generated {num_records:,} records.")
     print(f"Anomalies injected: {injected:,}")
-    print(f"Data saved to → {filename}")
+    print(f"Data saved to → {DATA_FILE}")
