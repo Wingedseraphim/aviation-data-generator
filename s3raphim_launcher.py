@@ -1,17 +1,15 @@
 """
 S3RAPHIM Launcher
-Single entry point for the whole toolkit — generate data (with or
-without anomalies) and inspect/detect anomalies, all from one menu.
+Single entry point for the toolkit.
 
 Run:
     python s3raphim_launcher.py
-
-Requires s3raphim_generator_anomalies.py, s3raphim_generator_clean.py,
-and s3raphim_detector_viewer.py to be in the same folder.
 """
 
 import json
 import os
+import subprocess
+import sys
 
 from s3raphim_generator_anomalies import generate_dataset
 from s3raphim_generator_clean import generate_clean_dataset
@@ -64,6 +62,32 @@ def run_viewer():
     viewer_menu(data)
 
 
+def run_bridge_and_qda():
+    """Run thesis bridge, then QDA evaluation."""
+    if not os.path.exists(DATA_FILE):
+        print(f"\nNo data file found ('{DATA_FILE}'). Generate data first (option 1 or 2).")
+        return
+
+    print("\n--- Step 1/2: Thesis bridge ---")
+    bridge = subprocess.run([sys.executable, "s3raphim_to_thesis.py"])
+    if bridge.returncode != 0:
+        print("Bridge failed. Fix errors above, then try again.")
+        return
+
+    if not os.path.exists("adsb_thesis_features.csv"):
+        print("Bridge did not create adsb_thesis_features.csv")
+        return
+
+    print("\n--- Step 2/2: QDA evaluation ---")
+    qda = subprocess.run([sys.executable, "s3raphim_qda_eval.py"])
+    if qda.returncode != 0:
+        print("QDA evaluation failed. Check that scikit-learn, pandas, matplotlib are installed:")
+        print("  pip install scikit-learn pandas matplotlib")
+        return
+
+    print("\nBridge + QDA pipeline finished.")
+
+
 def main():
     print("=" * 55)
     print("            S3RAPHIM ADS-B TOOLKIT")
@@ -76,9 +100,10 @@ def main():
         print("1. Generate data WITH anomalies")
         print("2. Generate CLEAN data (no anomalies)")
         print("3. View / detect anomalies in saved data")
-        print("4. Exit")
+        print("4. Run thesis bridge + QDA evaluation")
+        print("5. Exit")
 
-        choice = input("\nEnter your choice (1-4): ").strip()
+        choice = input("\nEnter your choice (1-5): ").strip()
 
         if choice == "1":
             run_generator_with_anomalies()
@@ -87,6 +112,8 @@ def main():
         elif choice == "3":
             run_viewer()
         elif choice == "4":
+            run_bridge_and_qda()
+        elif choice == "5":
             print("\nGoodbye.")
             break
         else:
