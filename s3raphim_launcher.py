@@ -1,9 +1,5 @@
 """
-S3RAPHIM Launcher
-Single entry point for the toolkit.
-
-Run:
-    python s3raphim_launcher.py
+S3RAPHIM Launcher — v1 data + bridge + v2 ML + v3 live sweep
 """
 
 import json
@@ -30,62 +26,67 @@ def _prompt_for_count(label="records"):
             print("Please enter a valid number.")
 
 
+def _run_script(script_name: str) -> bool:
+    if not os.path.exists(script_name):
+        print(f"Missing file: {script_name}")
+        return False
+    result = subprocess.run([sys.executable, script_name])
+    return result.returncode == 0
+
+
 def run_generator_with_anomalies():
     num_records = _prompt_for_count()
     data, injected = generate_dataset(num_records, anomaly_rate=0.05)
-
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
-    print(f"\nGenerated {num_records:,} records ({injected:,} anomalies injected).")
-    print(f"Saved to → {DATA_FILE}")
+    print(f"\nGenerated {num_records:,} records ({injected:,} anomalies).")
+    print(f"Saved → {DATA_FILE}")
 
 
 def run_generator_clean():
     num_records = _prompt_for_count("clean records")
     data = generate_clean_dataset(num_records)
-
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
     print(f"\nGenerated {num_records:,} clean records.")
-    print(f"Saved to → {DATA_FILE}")
+    print(f"Saved → {DATA_FILE}")
 
 
 def run_viewer():
     if not os.path.exists(DATA_FILE):
-        print(f"\nNo data file found ('{DATA_FILE}'). Generate data first (option 1 or 2).")
+        print(f"\nNo data file ('{DATA_FILE}'). Generate first (1 or 2).")
         return
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-    print(f"\nLoaded {len(data):,} records from {DATA_FILE}")
+    print(f"\nLoaded {len(data):,} records")
     viewer_menu(data)
 
 
 def run_bridge_and_qda():
-    """Run thesis bridge, then QDA evaluation."""
     if not os.path.exists(DATA_FILE):
-        print(f"\nNo data file found ('{DATA_FILE}'). Generate data first (option 1 or 2).")
+        print(f"\nNo data file. Generate first (1 or 2).")
         return
-
-    print("\n--- Step 1/2: Thesis bridge ---")
-    bridge = subprocess.run([sys.executable, "s3raphim_to_thesis.py"])
-    if bridge.returncode != 0:
-        print("Bridge failed. Fix errors above, then try again.")
+    print("\n--- Thesis bridge ---")
+    if not _run_script("s3raphim_to_thesis.py"):
         return
+    print("\n--- QDA eval ---")
+    _run_script("s3raphim_qda_eval.py")
 
+
+def run_ml_pipeline_v2():
     if not os.path.exists("adsb_thesis_features.csv"):
-        print("Bridge did not create adsb_thesis_features.csv")
+        print("Missing adsb_thesis_features.csv — run option 4 (bridge) first.")
         return
+    print("\n--- S3RAPHIM v2 ML pipeline ---")
+    _run_script("s3raphim_ml_pipeline.py")
 
-    print("\n--- Step 2/2: QDA evaluation ---")
-    qda = subprocess.run([sys.executable, "s3raphim_qda_eval.py"])
-    if qda.returncode != 0:
-        print("QDA evaluation failed. Check that scikit-learn, pandas, matplotlib are installed:")
-        print("  pip install scikit-learn pandas matplotlib")
+
+def run_live_sweep_v3():
+    if not os.path.exists(DATA_FILE):
+        print(f"\nNo data file. Generate first (1 or 2).")
         return
-
-    print("\nBridge + QDA pipeline finished.")
+    print("\n--- S3RAPHIM v3 live sweep ---")
+    _run_script("s3raphim_live_sweep.py")
 
 
 def main():
@@ -98,12 +99,14 @@ def main():
         print("                  MAIN MENU")
         print("=" * 55)
         print("1. Generate data WITH anomalies")
-        print("2. Generate CLEAN data (no anomalies)")
-        print("3. View / detect anomalies in saved data")
-        print("4. Run thesis bridge + QDA evaluation")
-        print("5. Exit")
+        print("2. Generate CLEAN data")
+        print("3. View / detect anomalies")
+        print("4. Thesis bridge + QDA eval")
+        print("5. v2 ML pipeline (train + save model)")
+        print("6. v3 Live sweep + score")
+        print("7. Exit")
 
-        choice = input("\nEnter your choice (1-5): ").strip()
+        choice = input("\nEnter choice (1-7): ").strip()
 
         if choice == "1":
             run_generator_with_anomalies()
@@ -114,10 +117,14 @@ def main():
         elif choice == "4":
             run_bridge_and_qda()
         elif choice == "5":
+            run_ml_pipeline_v2()
+        elif choice == "6":
+            run_live_sweep_v3()
+        elif choice == "7":
             print("\nGoodbye.")
             break
         else:
-            print("Invalid choice. Please try again.")
+            print("Invalid choice.")
 
 
 if __name__ == "__main__":

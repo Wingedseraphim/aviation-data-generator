@@ -73,3 +73,24 @@ Run:
 
 ```bash
 python s3raphim_to_thesis.py
+
+
+# S3RAPHIM ADS-B Toolkit
+
+Simulated ADS-B flight data generator, anomaly injector, detector, ML pipeline, and live sweeper for the **S3RAPHIM** aviation project.
+
+Built for learning, testing, and research — not certified avionics.
+
+**Related academic work:** B.Sc project *Machine Learning for Flight Anomaly Detection* (University of Benin) — this toolkit includes a thesis feature bridge and QDA-style evaluation path.
+
+---
+
+## Requirements
+
+### Core (no extra installs)
+- Python **3.8+**
+- Standard library only for generate / detect / sweep bookkeeping
+
+### Optional (ML pipeline)
+```bash
+pip install scikit-learn pandas joblib matplotlib
